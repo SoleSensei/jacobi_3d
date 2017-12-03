@@ -6,7 +6,7 @@
 
 #define  N   (2*2*2*2*2*2+2)
 double   maxeps = 0.1e-7;
-int itmax = 100;
+int itmax = 2000;
 int i,j,k;
 double eps;
 double A [N][N][N],  B [N][N][N];
