@@ -7,7 +7,7 @@
 
 #define  N   (2*2*2*2*2*2+2)
 static const double   maxeps = 0.1e-7;
-static const int itmax = 2000;
+static const int itmax = 5000;
 int i,j,k;
 double eps;
 double A [N][N][N],  B [N][N][N];
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 		eps = 0.;
 		relax();
 		resid();
-		printf( "it=%4i   eps=%f\n", it,eps);
+		// printf( "it=%4i   eps=%f\n", it,eps);
 		if (eps < maxeps) break;
 	}
 	wtime(&time_fin);
