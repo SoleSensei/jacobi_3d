@@ -49,9 +49,9 @@ int main(int argc, char **argv)
     {
 		eps = 0.;
 		relax();
-        // update(wrank,wsize); //Update neighbours
+        update(wrank,wsize); //Update neighbours
 		resid();
-        // update(wrank,wsize); //Update neighbours
+        update(wrank,wsize); //Update neighbours
 		// printf( "it=%4i   eps=%f\n", it,eps);
 		if (eps < maxeps) break;
 	}
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
         wtime(&time_fin);
         printf("Time: %gs\t", time_fin - time_start);
         printf("eps = %f\t", eps);
-        printf("  S = %f\n",sum/(N*N*N));        
+        printf("  S = %f\n",sum);        
     }
 
     	// Finalize MPI
@@ -114,13 +114,14 @@ void verify()
 {
 	double s = 0.0;
 	for(i=i1+1;i<=i2;i++)
-	for(j=0; j<=N-1; j++)
-	for(k=0; k<=N-1; k++)
+	for(j=1; j<=N-2; j++)
+	for(k=1; k<=N-2; k++)
 	{
-		s=s+A[i][j][k]*(i+1)*(j+1)*(k+1);
+		s=s+A[i][j][k]*(i+1)*(j+1)*(k+1)/(N*N*N);
 	}
         //Reduce all parts of A to check answer
     MPI_Reduce(&s,&sum,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+    
 }
 
 void update(int rank, int size)
@@ -130,24 +131,25 @@ void update(int rank, int size)
     MPI_Status status;
 
     if(rank!=0){
-        MPI_Isend(&A[(i1+1)*N*N] ,(i2-i1)*N*N,MPI_DOUBLE,rank-1,0,MPI_COMM_WORLD,&request_up);
+        MPI_Isend(&A[i1+1][N][N], (i2-i1)*N*N, MPI_DOUBLE, rank-1,0, MPI_COMM_WORLD, &request_up);
+        MPI_Isend(&B[i1+1][N][N], (i2-i1)*N*N, MPI_DOUBLE, rank-1,0, MPI_COMM_WORLD, &request_up);
     
     }
     if(rank!=size-1){
-        MPI_Isend(&A[(i1+1)*N*N],(i2-i1)*N*N,MPI_DOUBLE,rank+1,0,MPI_COMM_WORLD,&request_down);
-        MPI_Isend(&B[(i1+1)*N*N],(i2-i1)*N*N,MPI_DOUBLE,rank+1,0,MPI_COMM_WORLD,&request_down);
+        MPI_Isend(&A[i1+1][N][N], (i2-i1)*N*N, MPI_DOUBLE, rank+1,0, MPI_COMM_WORLD, &request_down);
+        MPI_Isend(&B[i1+1][N][N], (i2-i1)*N*N, MPI_DOUBLE, rank+1,0, MPI_COMM_WORLD, &request_down);
     }
     if (rank != 0){
-        MPI_Recv(&A[(block*(rank-1)+1)*N*N], (i2-i1)*N*N, MPI_DOUBLE, rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-        MPI_Recv(&B[(block*(rank-1)+1)*N*N], (i2-i1)*N*N, MPI_DOUBLE, rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+        MPI_Recv(&A[block*(rank-1)+1][N][N], (i2-i1)*N*N, MPI_DOUBLE, rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&B[block*(rank-1)+1][N][N], (i2-i1)*N*N, MPI_DOUBLE, rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
     if (rank != size-1)
         if(rank==size-2){
-            MPI_Recv(&A[(block*(rank+1)+1)*N*N], ((N-2)-i1)*N*N, MPI_DOUBLE, rank+1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-            MPI_Recv(&B[(block*(rank+1)+1)*N*N], ((N-2)-i1)*N*N, MPI_DOUBLE, rank+1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );        
+            MPI_Recv(&A[block*(rank+1)+1][N][N], ((N-2)-i1)*N*N, MPI_DOUBLE, rank+1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&B[block*(rank+1)+1][N][N], ((N-2)-i1)*N*N, MPI_DOUBLE, rank+1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);        
         }else{
-            MPI_Recv(&A[(block*(rank+1)+1)*N*N], (i2-i1)*N*N, MPI_DOUBLE, rank+1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-            MPI_Recv(&B[(block*(rank+1)+1)*N*N], (i2-i1)*N*N, MPI_DOUBLE, rank+1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+            MPI_Recv(&A[block*(rank+1)+1][N][N], (i2-i1)*N*N, MPI_DOUBLE, rank+1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&B[block*(rank+1)+1][N][N], (i2-i1)*N*N, MPI_DOUBLE, rank+1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
     if (rank != 0) {
         MPI_Wait( &request_up, &status );
